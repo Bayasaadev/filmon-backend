@@ -6,6 +6,10 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from .models import UserProfile
+from interactions.models import FilmUserData, Review, CustomList
+from films.serializers import FilmSerializer
+from films.models import Film
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
@@ -85,3 +89,56 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user = self.validated_data["user"]
         user.set_password(self.validated_data["new_password"])
         user.save()
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    watched_count = serializers.SerializerMethodField()
+    watchlisted_count = serializers.SerializerMethodField()
+    liked_count = serializers.SerializerMethodField()
+    recent_reviews = serializers.SerializerMethodField()
+    recent_watched = serializers.SerializerMethodField()
+    favorite_films = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            'username', 'email', 'avatar', 'bio', 'location', 'website',
+            'watched_count', 'watchlisted_count', 'liked_count',
+            'recent_reviews', 'recent_watched', 'favorite_films'
+        ]
+        read_only_fields = [
+            'username', 'email',
+            'watched_count', 'watchlisted_count', 'liked_count',
+            'recent_reviews', 'recent_watched', 'favorite_films'
+        ]
+
+    def get_watched_count(self, obj):
+        return FilmUserData.objects.filter(user=obj.user, watched=True).count()
+
+    def get_watchlisted_count(self, obj):
+        return FilmUserData.objects.filter(user=obj.user, watchlisted=True).count()
+
+    def get_liked_count(self, obj):
+        return FilmUserData.objects.filter(user=obj.user, liked=True).count()
+
+    def get_recent_reviews(self, obj):
+        reviews = Review.objects.filter(user=obj.user).select_related('film')[:5]
+        return [{
+            "film": review.film.title,
+            "film_id": review.film.id,
+            "content": review.content,
+            "created_at": review.created_at
+        } for review in reviews]
+
+    def get_recent_watched(self, obj):
+        watched = FilmUserData.objects.filter(user=obj.user, watched=True).order_by('-updated_at').select_related('film')[:5]
+        return FilmSerializer([entry.film for entry in watched], many=True).data
+
+    def get_favorite_films(self, obj):
+        # Assumes there's a public CustomList called "Favorites"
+        favorites = CustomList.objects.filter(user=obj.user, name__iexact='favorites').first()
+        if not favorites:
+            return []
+        return FilmSerializer(favorites.films.all()[:5], many=True).data

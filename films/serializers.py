@@ -43,16 +43,16 @@ class FilmSerializer(serializers.ModelSerializer):
     genres = GenreSerializer(many=True, read_only=True)
     studios = StudioSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
+    streamings = serializers.SerializerMethodField()
     cast = serializers.SerializerMethodField()
     crew = serializers.SerializerMethodField()
-
-    streamings = serializers.SerializerMethodField()
+    average_score = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Film
         fields = [
             'id', 'title', 'tagline', 'description',
-            'release_date', 'duration',
+            'release_date', 'duration', 'average_score', 
             'poster', 'background', 'trailer_url',
             'genres', 'studios', 'tags',
             'streamings', 'cast', 'crew',
