@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import FilmUserData, Review, ReviewLike, CustomList
+from .permissions import isOwnerOrReadOnly
 from .serializers import FilmUserDataSerializer, ReviewSerializer, CustomListSerializer
 from films.models import Film
 
@@ -21,7 +22,7 @@ class FilmUserDataViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.select_related('user', 'film')
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, isOwnerOrReadOnly]
 
     def get_queryset(self):
         film_id = self.request.query_params.get('film')
@@ -59,7 +60,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CustomListViewSet(viewsets.ModelViewSet):
     queryset = CustomList.objects.all()
     serializer_class = CustomListSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, isOwnerOrReadOnly]
 
     def get_queryset(self):
         return CustomList.objects.filter(user=self.request.user)
