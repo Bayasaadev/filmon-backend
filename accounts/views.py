@@ -93,12 +93,12 @@ class UserProfileMeView(APIView):
 
     def get(self, request):
         profile = request.user.profile
-        serializer = UserProfileSerializer(profile)
+        serializer = UserProfileSerializer(profile, context={'request': request})
         return Response(serializer.data)
     
     def put(self, request):
         profile = request.user.profile
-        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        serializer = UserProfileSerializer(profile, context={'request': request}, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -110,5 +110,5 @@ class PublicUserProfileView(APIView):
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
         profile = user.profile
-        serializer = UserProfileSerializer(profile)
+        serializer = UserProfileSerializer(profile, context={'request': request})
         return Response(serializer.data)

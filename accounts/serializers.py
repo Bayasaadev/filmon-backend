@@ -113,6 +113,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'watched_count', 'watchlisted_count', 'liked_count',
             'recent_reviews', 'recent_watched', 'favorite_films'
         ]
+        extra_kwargs = {
+            'avatar': {'required': False},
+            'bio': {'required': False},
+            'location': {'required': False},
+            'website': {'required': False},
+        }
+
+    def get_avatar(self, obj):
+        request = self.context.get('request')
+        if obj.avatar and request:
+            return request.build_absolute_uri(obj.avatar.url)
+        return None
 
     def get_watched_count(self, obj):
         return FilmUserData.objects.filter(user=obj.user, watched=True).count()
@@ -142,3 +154,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if not favorites:
             return []
         return FilmSerializer(favorites.films.all()[:5], many=True).data
+    
+    def update(self, instance, validated_data):
+        instance.bio = validated_data.get("bio", instance.bio)
+        instance.location = validated_data.get("location", instance.location)
+        instance.website = validated_data.get("website", instance.website)
+        if validated_data.get("avatar"):
+            instance.avatar = validated_data["avatar"]
+        instance.save()
+        return instance
