@@ -94,6 +94,8 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
+    is_staff = serializers.BooleanField(source='user.is_staff', read_only=True)
+    is_superuser = serializers.BooleanField(source='user.is_superuser', read_only=True)
     watched_count = serializers.SerializerMethodField()
     watchlisted_count = serializers.SerializerMethodField()
     liked_count = serializers.SerializerMethodField()
@@ -105,11 +107,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = [
             'username', 'email', 'avatar', 'bio', 'location', 'website',
+            'is_staff', 'is_superuser',
             'watched_count', 'watchlisted_count', 'liked_count',
             'recent_reviews', 'recent_watched', 'favorite_films'
         ]
         read_only_fields = [
-            'username', 'email',
+            'username', 'email', 'is_staff', 'is_superuser',
             'watched_count', 'watchlisted_count', 'liked_count',
             'recent_reviews', 'recent_watched', 'favorite_films'
         ]
